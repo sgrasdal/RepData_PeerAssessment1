@@ -4,6 +4,8 @@ output:
   html_document:
     keep_md: true
 ---
+knitr::opts_knit$set(root.dir = 'C:/Users/sgras/OneDrive/Documents/School/WNTR 2024/Reproducible Research/Week2/Assignment/RepData_PeerAssessment1')
+
 ## Setup
 
 ```r
@@ -28,16 +30,22 @@ library(tidyverse)
 
 
 ```r
-setwd("C:/Users/sgras/OneDrive/Documents/School/WNTR 2024/Reproducible Research/Week2/Assignment")
 data <- read.csv("activity.csv")
 ```
 
 ## What is mean total number of steps taken per day?
 
+![Total_Steps_hist.png](PA1_template_figures/Total_Steps_hist.png)<!-- -->
+
+
 ```r
-library(ggplot2)
 total.steps <- tapply(data$steps, data$date, FUN=sum, na.rm=TRUE)
-qplot(total.steps, binwidth=1000, xlab="total number of steps taken each day")
+
+Steps_hist <- qplot(total.steps, binwidth=1000, xlab="total number of steps 
+                taken each day", ylab = "number of participants", main = "Total Number of Steps Taken Per Day") +
+        theme_dark() +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 ```
 
 ```
@@ -46,8 +54,6 @@ qplot(total.steps, binwidth=1000, xlab="total number of steps taken each day")
 ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
 ## generated.
 ```
-
-![](PA1_template_files/figure-html/unnamed-chunk-1-1.png)<!-- -->
 
 ```r
 mean(total.steps, na.rm=TRUE)
@@ -67,17 +73,23 @@ median(total.steps, na.rm=TRUE)
 
 ## What is the average daily activity pattern?
 
+![Activity_Pattern.png](PA1_template_figures/Activity_Pattern.png)<!-- -->
+
+
 ```r
-library(ggplot2)
 averages <- aggregate(x=list(steps=data$steps), by=list(interval=data$interval),
                       FUN=mean, na.rm=TRUE)
-ggplot(data=averages, aes(x=interval, y=steps)) +
-    geom_line() +
-    xlab("5-minute interval") +
-    ylab("average number of steps taken")
-```
 
-![](PA1_template_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+ActivityPattern <- ggplot(data=averages, aes(x=interval, y=steps)) +
+        geom_line() +
+        xlab("5-minute interval") + 
+        ylab("average number of steps taken") +
+        labs(title = "Daily Activity Pattern") +
+        theme_dark() +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                panel.background = element_blank(), axis.line = element_line
+                (colour = "black"))
+```
 
 On average across all the days in the dataset, the 5-minute interval contains
 the maximum number of steps?
@@ -93,7 +105,9 @@ averages[which.max(averages$steps),]
 
 ## Imputing missing values
 
-There are many days/intervals where there are missing values (coded as `NA`). The presence of missing days may introduce bias into some calculations or summaries of the data.
+There are many days/intervals where there are missing values (coded as `NA`). 
+The presence of missing days may introduce bias into some calculations or 
+summaries of the data.
 
 
 ```r
@@ -122,20 +136,24 @@ fill.value <- function(steps, interval) {
         filled <- (averages[averages$interval==interval, "steps"])
     return(filled)
 }
+
 filled.data <- data
 filled.data$steps <- mapply(fill.value, filled.data$steps, filled.data$interval)
 ```
-Now, using the filled data set, let's make a histogram of the total number of steps taken each day and calculate the mean and median total number of steps.
+Now, using the filled data set, let's make a histogram of the total number of 
+steps taken each day and calculate the mean and median total number of steps.
+
+![Adjusted_Total_Steps_Hist.png](PA1_template_figures/Adjusted_Total_Steps_Hist.png)<!-- -->
 
 
 ```r
 total.steps <- tapply(filled.data$steps, filled.data$date, FUN=sum)
-qplot(total.steps, binwidth=1000, xlab="total number of steps taken each day")
-```
+AdjSteps_hist <- qplot(total.steps, binwidth=1000, xlab="total number of steps taken each day", 
+      ylab = "number of participants", main = "Total Number of Steps Per Day") +
+        theme_dark() +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
-
-```r
 mean(total.steps)
 ```
 
@@ -158,9 +176,14 @@ default. However, after replacing missing `steps` values with the mean `steps`
 of associated `interval` value, these 0 values are removed from the histogram
 of total number of steps taken each day.
 
+Additionally there is less of a negative skew. The median and mean match now 
+whereas before the median was higher than the mean indicating that there were 
+values "pulling" the mean score lower. 
+
 ## Are there differences in activity patterns between weekdays and weekends?
-First, let's find the day of the week for each measurement in the dataset. In
-this part, we use the dataset with the filled-in values.
+First, we have to identify the days of the week for each datapoint. In
+this part, we use the dataset with the filled-in values because it is more
+representative of reality.
 
 
 ```r
@@ -177,13 +200,58 @@ filled.data$date <- as.Date(filled.data$date)
 filled.data$day <- sapply(filled.data$date, FUN=weekday.or.weekend)
 ```
 
-Now, let's make a panel plot containing plots of average number of steps taken
-on weekdays and weekends.
+The following plot compares th weekday and weekend daily activity pattern by 
+using the above code to identify first, the category of the data point and then 
+mapping it to the appropriate graph. 
+
+![Activity_Pettern_Comparison.png](PA1_template_figures/Activity_Pettern_Comparison.png)<!-- -->
+
+
 
 ```r
 averages <- aggregate(steps ~ interval + day, data=filled.data, mean)
-ggplot(averages, aes(interval, steps)) + geom_line() + facet_grid(day ~ .) +
-    xlab("5-minute interval") + ylab("Number of steps")
+ActivityPattern_comp <- ggplot(averages, aes(interval, steps)) + geom_line() + facet_grid(day ~ .) +
+    xlab("5-minute interval") + ylab("Number of steps") +
+        labs(title = "Daily Activity Pattern", subtitle = "Weekdays vs. Weekends")+
+        theme_dark() +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+## Printing and saving
+This final section is purely to demonstrate how I saved all of these into the 
+working directory so i could refer to them in the assignment. 
+
+
+```r
+ggsave(filename = "Total_Steps_Hist.png", 
+       device = "png",
+       height = 10, width = 15, units = "cm", 
+       plot = Steps_hist, path = "PA1_template_figures")
+
+ggsave(filename = "Activity_Pattern.png", 
+       device = "png",
+       height = 10, width = 15, units = "cm", 
+       plot = ActivityPattern, path = "PA1_template_figures")
+
+ggsave(filename = "Adjusted_Total_Steps_Hist.png", 
+       device = "png",
+       height = 10, width = 15, units = "cm", 
+       plot = AdjSteps_hist, path = "PA1_template_figures")
+
+ggsave(filename = "Activity_Pettern_Comparison.png", 
+       device = "png",
+       height = 10, width = 15, units = "cm", 
+       plot = ActivityPattern_comp, path = "PA1_template_figures")
+#Once these are saved I can refer to them in the actual code using "![filename](path/filename)<!-- -->"
+```
+
+
+
+
+
+
+
+
+
+
